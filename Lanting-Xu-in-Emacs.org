@@ -2,7 +2,7 @@
 
 # Created: <2018-04-13 Fri>
 
-王羲之的书法作品《[[https://zh.wikipedia.org/zh-cn/%25E8%2598%25AD%25E4%25BA%25AD%25E9%259B%2586%25E5%25BA%258F][兰亭集序]]》以对应的排版显示在 Emacs 中
+王羲之的书法作品《[[https://zh.wikipedia.org/zh-cn/%E8%98%AD%E4%BA%AD%E9%9B%86%E5%BA%8F][兰亭集序]]》以对应的排版显示在 Emacs 中
 
 [[./img/Lanting-Xu.png]]
 
