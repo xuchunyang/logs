@@ -1,0 +1,67 @@
+#+TITLE: Emacs 竖排《兰亭集序》
+
+# Created: <2018-04-13 Fri>
+
+王羲之的书法作品《[[https://zh.wikipedia.org/zh-cn/%25E8%2598%25AD%25E4%25BA%25AD%25E9%259B%2586%25E5%25BA%258F][兰亭集序]]》以对应的排版显示在 Emacs 中
+
+[[./img/Lanting-Xu.png]]
+
+以下是实现
+
+#+begin_src emacs-lisp
+(defun 兰亭集序 ()
+  (interactive)
+  (let* ((s "
+永和九年嵗在癸丑暮春之初㑹
+于㑹稽山隂之蘭亭脩稧事
+也羣賢畢至少長咸集此地
+有崇山峻領茂林脩竹又有清流激
+湍暎帯左右引以為流觴曲水
+列坐其次雖無絲竹管弦之
+盛一觴一詠亦足以暢敘幽情
+是日也天朗氣清恵風和暢仰
+觀宇宙之大俯察品類之盛
+所以逰目騁懐足以極視聴之
+娱信可樂也夫人之相與俯仰
+一世㦯取諸懐抱悟言一室之内
+㦯囙寄所託放浪形骸之外雖
+趣舎萬殊静躁不同當其欣
+扵所遇蹔得扵己怏然自足不
+知老之将至及其所之既惓情
+随事遷感慨係之矣向之所
+欣俛仰之閒以為陳迹猶不
+䏻不以之興懐况脩短随化终
+期扵盡古人云死生亦大矣豈
+不痛㦲每攬昔人興感之由
+若合一契未甞不臨文嗟悼不
+䏻喻之扵懐固知一死生為虗
+誕齊彭殤為妄作後之視今
+亦由今之視昔悲夫故列
+敘時人録其所述雖世殊事
+異所以興懐其致一也後之攬
+者亦将有感扵斯文")
+         ;; 分解成行
+         (l (split-string s "\n" 'omit-nulls))
+         ;; 每行等宽
+         (longest (apply #'max (mapcar #'length l)))
+         (l (mapcar (lambda (elt)
+                      (let ((diff (- longest (length elt))))
+                        (if (> diff 0)
+                            ;; 为了等宽，使用全角空格 #x3000
+                            (concat elt (make-string diff #x3000))
+                          elt)))
+                    l))
+         ;; 转置
+         (l (mapcar (lambda (i)
+                      (apply #'string
+                             (mapcar (lambda (a) (aref a i)) l)))
+                    (number-sequence 0 (1- longest))))
+         ;; 每行翻转
+         (l (mapcar 'reverse l))
+         
+         (r (mapconcat #'identity l "\n")))
+    (with-current-buffer (get-buffer-create "兰亭集序")
+      (erase-buffer)
+      (insert r)
+      (display-buffer (current-buffer)))))
+#+end_src
