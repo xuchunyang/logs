@@ -1,0 +1,79 @@
+#+TITLE: 用 PySide2 写一个状态栏 App
+
+# Created: 2018-04-13
+
+只存在于状态栏的 App 功能简单，但有些非常有用。用 PySide2 (Python for Qt) 写一个简单的状态栏 App 很容易
+
+[[./img/pyside2-tray.png]]
+
+完整代码 ~tray-demo.py~ ：
+
+#+BEGIN_SRC python
+  # tray-demo.py
+  from PySide2.QtWidgets import QApplication, QSystemTrayIcon, QAction, QMenu
+  from PySide2.QtGui import QIcon
+  import webbrowser
+
+  # Create the app
+  app = QApplication([])
+  app.setQuitOnLastWindowClosed(False)
+
+  # Create the icon
+  # https://orgmode.org/img/org-mode-unicorn.png
+  icon = QIcon("org-mode-unicorn.png")
+
+  # Create the tray
+  tray = QSystemTrayIcon()
+  tray.setIcon(icon)
+  tray.setVisible(True)
+
+  # Create the menu
+  menu = QMenu()
+
+  action1 = QAction("Open Google")
+  action1.triggered.connect(lambda: webbrowser.open("https://google.com"))
+  menu.addAction(action1)
+
+  menu.addSeparator()
+
+  action2 = QAction("Quit")
+  action2.triggered.connect(app.quit)
+  menu.addAction(action2)
+
+  # Add the menu to the tray
+  tray.setContextMenu(menu)
+
+  app.exec_()
+#+END_SRC
+
+
+运行：
+
+#+begin_src sh
+$ python tray-demo.py
+#+end_src
+
+* 用 py2app 打包
+
+这么运行很麻烦，在 macOS 下用 py2app 把 ~tray-demo.py~ 打包成 ~tray-demo.app~
+
+首先，生成 setup.py
+
+#+begin_src 
+$ py2applet --make-setup tray-demo.py
+#+end_src
+
+然后，修改 setup.py
+
+#+BEGIN_SRC python
+DATA_FILES = ['org-mode-unicorn.png']
+OPTIONS = {'plist': {'LSUIElement': True}}
+#+END_SRC
+
+最后，生成 dist/tray-demo.app
+
+#+begin_src sh
+$ python setup.py py2app -A
+#+end_src
+
+详细步骤应该参考文档 [[https://py2app.readthedocs.io/en/latest/tutorial.html][Tutorial — py2app 0.15 documentation]]
