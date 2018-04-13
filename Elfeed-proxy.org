@@ -1,0 +1,34 @@
+#+TITLE: 给 Elfeed 设置代理
+
+# Created: <2018-04-13 Fri>
+
+Elfeed 是 Emacs 下的一个 Feed 阅读器，有些 Feed 国内无法访问，比如
+
+- https://open.nytimes.com/feed
+
+这时需要使用代理
+
+#+begin_src emacs-lisp
+(setq elfeed-curl-extra-arguments '("--proxy" "socks5://127.0.0.1:1080"))
+#+end_src
+
+注意这里不能写成 
+
+#+begin_src emacs-lisp
+(setq elfeed-curl-extra-arguments '("--proxy socks5://127.0.0.1:1080"))
+#+end_src
+
+因为这是两个参数，写在一起会被 ~call-process~ 和 ~start-process~ 视作一个参数，如下面演示的
+
+#+begin_src emacs-lisp
+  (call-process "ls" nil nil nil "-l /etc/")
+  ;; => 2
+
+  (call-process "ls" nil nil nil "-l" "/etc/")
+  ;; => 0
+#+end_src
+
+** 图片无法显示
+
+此外值得注意的是，阅读 Feed 时，有些图片可能无法显示，因为实际抓取这些图片的是 ~shr.el~ 也就是 ~url.el~ ，以前折腾过 ~url.el~ 代理，但印象中效果不好，不怎么靠谱。以后有机会再折腾看看，看看能不能也用 curl 抓取这些图片。
+ 

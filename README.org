@@ -1,1 +1,2 @@
 - 2018-04-13 | [[Lanting-Xu-in-Emacs.org][Emacs 竖排《兰亭集序》]]
+- 2018-04-13 | [[Elfeed-proxy.org][给 Elfeed 设置代理]]
