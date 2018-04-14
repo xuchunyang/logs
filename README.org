@@ -1,3 +1,4 @@
 - 2018-04-13 | [[Lanting-Xu-in-Emacs.org][Emacs 竖排《兰亭集序》]]
 - 2018-04-13 | [[Elfeed-proxy.org][给 Elfeed 设置代理]]
 - 2018-04-13 | [[PySide2-System-Tray-App.org][用 PySide2 写一个状态栏 App]]
+- 2018-04-14 | [[Remove-leading-and-trailing-blank-lines.org][删除文件开头和结尾的空白行]]

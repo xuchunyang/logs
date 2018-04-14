@@ -1,0 +1,45 @@
+#+TITLE: 删除文件开头和结尾的空白行
+
+# Created: <2018-04-14 Sat>
+
+假设有这样一个文本 ~input.txt~
+
+#+begin_example
+
+hello
+
+world
+
+#+end_example
+
+需要去掉开头和结尾的空白行，应该得到
+
+#+begin_example
+hello
+
+world
+#+end_example
+
+* Python
+
+#+begin_src sh
+  $ cat input.txt |  python -c 'import sys; print(sys.stdin.read().strip())'
+  hello
+
+  world
+  $
+#+end_src
+
+* Emacs
+
+#+begin_src emacs-lisp
+  (defun chunyang-remote-empty-lines ()
+    "去掉开头和结尾的空行."
+    (interactive)
+    (goto-char (point-min))
+    (while (and (looking-at "^$") (not (eobp)))
+      (delete-char 1))
+    (goto-char (point-max))
+    (while (and (looking-at "^$") (not (bobp)))
+      (delete-char -1)))
+#+end_src
