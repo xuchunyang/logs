@@ -1,0 +1,102 @@
+#+TITLE: 用 selenium 自动化打开百度网盘加密链接
+
+# Created: 2018-04-26
+# Tags: python
+
+加密的百度网盘链接形如
+
+#+begin_example
+链接: https://pan.baidu.com/s/1wOsZjds8IVfmc_GYZZEkjA 密码: zmrm
+#+end_example
+
+每次都需要手动复制粘贴密码。试用 selenium 自动化这一步骤。
+
+第一步，从剪切板获得信息
+
+#+BEGIN_SRC python :results output
+  import subprocess
+
+  r = subprocess.run(["pbpaste"], stdout=subprocess.PIPE)
+  r.check_returncode()
+  print(r.stdout.decode())
+#+END_SRC
+
+#+RESULTS:
+: 链接: https://pan.baidu.com/s/1wOsZjds8IVfmc_GYZZEkjA 密码: zmrm
+
+第二步，获得链接和密码
+
+#+BEGIN_SRC python :results output
+  import subprocess
+  import re
+
+  def pbpaste():
+      """返回 pbpaste 的输出"""
+      r = subprocess.run(["pbpaste"], stdout=subprocess.PIPE)
+      r.check_returncode()
+      output = r.stdout.decode()
+      return output
+
+  # 链接: https://pan.baidu.com/s/1wOsZjds8IVfmc_GYZZEkjA 密码: zmrm
+  # 防爆网盘预览：https://pan.baidu.com/s/1iucGgvS__QA6GJZ3UJ4ODg 密码：m6u9
+  text = pbpaste()
+  m = re.search(r"..[:：] *(http.+) *..[:：] *([a-z0-9]{4})", text)
+  if not m:
+      print("剪切板中没有百度链接: '" + text + "'")
+  else:
+      print("链接: " + m.group(1))
+      print("密码: " + m.group(2))
+#+END_SRC
+
+#+RESULTS:
+: 链接: https://pan.baidu.com/s/1iucGgvS__QA6GJZ3UJ4ODg 
+: 密码: m6u9
+
+第三部，用 Chrome 打开链接并输入密码
+
+#+BEGIN_SRC python :tangle ~/bin/baidu_pan.py :shebang #!/usr/bin/env python
+  import subprocess
+  import re
+  import sys
+  from time import sleep
+
+  from selenium import webdriver
+  from selenium.webdriver.common.keys import Keys
+
+
+  def pbpaste():
+      """返回 pbpaste 的输出"""
+      r = subprocess.run(["pbpaste"], stdout=subprocess.PIPE)
+      r.check_returncode()
+      output = r.stdout.decode()
+      return output
+
+  def parse(text):
+      """返回链接和密码"""
+      # 链接: https://pan.baidu.com/s/1wOsZjds8IVfmc_GYZZEkjA 密码: zmrm
+      # 防爆网盘预览：https://pan.baidu.com/s/1iucGgvS__QA6GJZ3UJ4ODg 密码：m6u9
+      m = re.search(r"..[:：] *(http.+) *..[:：] *([a-z0-9]{4})", text)
+      if not m:
+          print("[Error] 剪切板中没有百度链接: '" + text + "'")
+          sys.exit()
+      else:
+          return m.groups()
+
+  def main():
+      text = pbpaste()
+      link, password = parse(text)
+
+      print(f"正在打开 {link} ({password}) ...")
+
+      chrome = webdriver.Chrome()
+      chrome.get(link)
+      elem = chrome.find_element_by_tag_name("input")
+      elem.clear()
+      elem.send_keys(password)
+      elem.send_keys(Keys.RETURN) 
+      # https://stackoverflow.com/q/6176526/2999892
+      input("Type any key to quit Chrome")
+
+  if __name__ == "__main__":
+      main()
+#+END_SRC
