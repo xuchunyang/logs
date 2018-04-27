@@ -1,0 +1,115 @@
+#+TITLE: 用 Python 给自己发邮件
+
+# Created: 2018-04-27
+# Tags: python
+
+要想给自己（或者任何人）发邮件首先需要一个邮箱帐号，包括 SMTP 地址、帐号和密码，按照 Emacs 习惯，我把它们保存在 =~/.authinfo= 里面，形如：
+
+#+begin_example
+machine smtp.yandex.com login mail@xuchunyang.me password PASSWORD
+#+end_example
+
+首先，用 Python 获得这些信息
+
+#+BEGIN_SRC python :results output
+  from netrc import netrc
+  import os
+
+  file = os.path.expanduser("~/.authinfo")
+  n = netrc(file)
+  smtp = "smtp.yandex.com"
+  user, account, password = n.authenticators(smtp)
+
+  print("SMTP:", smtp)
+  print("Username:", user)
+  print("Password:", password)
+#+END_SRC
+
+#+RESULTS:
+: SMTP: smtp.yandex.com
+: Username: mail@xuchunyang.me
+: Password: PASSWORD
+
+然后，可以发邮件了
+
+#+BEGIN_SRC python :tangle ~/bin/mail.py :shebang #!/usr/bin/env python
+  from netrc import netrc
+  import os
+  import smtplib
+  import sys
+
+
+  def get_smtp_info():
+      """从 ~/.authinfo 获得 (SMTP, 用户名, 密码)"""
+      file = os.path.expanduser("~/.authinfo")
+      n = netrc(file)
+      smtp = "smtp.yandex.com"
+      user, account, password = n.authenticators(smtp)
+      return (smtp, user, password)
+
+
+  def send_message(smtp, user, password, from_addr, to_addr, text):
+      """给收件人 TO 发送 MESSAGE"""
+      s = smtplib.SMTP(smtp)
+      s.starttls()
+      s.login(user, password)
+      msg = fill_message(from_addr, text)
+      s.sendmail(from_addr, to_addr, msg)
+
+
+  def fill_message(from_addr, text):
+      """格式化 message, 第一行视作 Subject，其余的视为 Body"""
+      try:
+          subject, body = text.split("\n", 1)
+      except ValueError:
+          subject = text.split("\n", 1)[0]
+          body = ""
+
+      msg = "From: " + from_addr + "\n"
+      msg += "Subject: " + subject + "\n"
+      msg += "\n" + body + "\n"
+      return msg
+
+
+  def get_stdin():
+      if sys.stdin.isatty():
+          print("输入需要发送的信息（按 C-d 结束）:")
+      return sys.stdin.read()
+
+
+  def get_first_line(s):
+      """返回 S 的第一行"""
+      return s.split("\n", 1)[0]
+
+
+  def main():
+      smtp, user, password = get_smtp_info()
+
+      # 我的 SMTP 用户名恰好也是我的邮箱地址
+      from_addr = user
+
+      # 默认收件人是我自己，但可以用命令行第一个参数指定任意地址
+      if len(sys.argv) > 1:
+          to_addr = sys.argv[1]
+      else:
+          to_addr = user
+
+      text = get_stdin()
+
+      info = "Sending '{}...' to {}...".format(get_first_line(text), to_addr)
+      print(info)
+      send_message(smtp, user, password, from_addr, to_addr, text)
+      print(info + "Done")
+
+
+  main()
+#+END_SRC
+
+使用举例
+
+#+begin_example
+  bash-4.4$ (echo "The output of ls -l" ; ls -l) | mail.py
+  Sending 'The output of ls -l...' to mail@xuchunyang.me...
+  Sending 'The output of ls -l...' to mail@xuchunyang.me...Done
+  bash-4.4$
+#+end_example
