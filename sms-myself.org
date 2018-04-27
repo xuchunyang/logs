@@ -1,0 +1,102 @@
+#+TITLE: 用 Twilio 给自己发短信
+
+# Created: 2018-04-27
+# Tags: python
+
+用自己的手机号注册一个免费的 Twilio 帐号，获得 API 需要的帐号和 Token，把这些信息保存到 =~/.authinfo= ，形如
+
+#+begin_src text
+machine twilio login ACXXXXXXXXXXXXXXXXX password YYYYYYYYYYYYYYYYYY
+#+end_src
+
+此外，为了能发短信，还需要获得一个 Twilio 号码，Twillo 也有免费提供。
+
+第一步，从 =~/.authinfo= 获得帐号和 Token
+
+#+BEGIN_SRC python :results output
+  from netrc import netrc
+  import os
+
+  file = os.path.expanduser("~/.authinfo")
+  n = netrc(file)
+  user, account, password = n.authenticators('twilio')
+
+  account = user
+  token = password
+
+  print("帐号:", account)
+  print("Token:", token)
+#+END_SRC
+
+#+RESULTS:
+: 帐号: ACXXXXXXXXXXXXXXXXX
+: Token: YYYYYYYYYYYYYYYYYY
+
+第二步，发短信
+
+#+BEGIN_SRC python :tangle ~/bin/sms.py :shebang #!/usr/bin/env python
+  from netrc import netrc
+  import os
+  import sys
+
+  import twilio.rest
+
+
+  def get_account_and_token():
+      """
+      从 ~/.authinfo 获得 (account, token)
+
+      格式形如：
+
+      machine twilio login ACXXXXXXXXXXXXXXXXX password YYYYYYYYYYYYYYYYYY
+      """
+      file = os.path.expanduser("~/.authinfo")
+      n = netrc(file)
+      user, account, password = n.authenticators('twilio')
+
+      account = user
+      token = password
+      return (account, token)
+
+
+  def get_argv1_or_stdin():
+      """获得命令行的第一个参数（如果有的话），否则读取 STDIN"""
+      if len(sys.argv) > 1:
+          return sys.argv[1]
+      else:
+          if sys.stdin.isatty():
+              print("输入你的信息（按 C-d 结束):")
+          return sys.stdin.read()
+
+
+  def send_message(accout, token, from_, to, body):
+      """发短信"""
+      client = twilio.rest.Client(accout, token)
+      message = client.messages.create(to=to, from_=from_, body=body)
+      return message
+
+
+  def main():
+      account, token = get_account_and_token()
+      print(f"Get account: {account}, token: {token}")
+      from_ = "+17312074073"
+      to = "+8615818531183"
+      body = get_argv1_or_stdin()
+      body_first_line = body.split("\n", 1)[0]
+      print(f"Sending '{body_first_line}'... to myself...")
+      send_message(account, token, from_, to, body)
+      print(f"Sending '{body_first_line}'... to myself...Done")
+
+
+  if __name__ == "__main__":
+      main()
+#+END_SRC
+
+使用举例
+
+#+begin_example
+~ $ date | sms.py
+Get account: ACXXXXXXXXXXXXXXXXX, token: YYYYYYYYYYYYYYYYYY
+Sending 'Fri Apr 27 16:26:00 CST 2018'... to myself...
+Sending 'Fri Apr 27 16:26:00 CST 2018'... to myself...Done
+#+end_example
