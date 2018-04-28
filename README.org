@@ -5,3 +5,4 @@
 - 2018-04-26 | [[automate-baidu-link.org][用 selenium 自动化打开百度网盘加密链接]]
 - 2018-04-27 | [[sms-myself.org][用 Twilio 给自己发短信]]
 - 2018-04-27 | [[file:email-myself.org][用 Python 给自己发邮件]]
+- 2018-04-28 | [[file:share-mac-ubuntu-clipboard.org][共享 Mac 和 Linux 剪切板]]

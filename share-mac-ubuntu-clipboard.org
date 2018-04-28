@@ -1,0 +1,39 @@
+#+TITLE: 共享 Mac 和 Linux 剪切板
+
+#+Created: 2018-04-28
+
+我有两台电脑，分别运作着 Mac 和 Linux，有时需要从 Mac 发送一段文字给 Linux，或者反之。
+
+** 从 Linux 发送到 Mac 的剪切板
+
+#+begin_src sh
+xuchunyang@linux $ echo 'Sending text from Linux to Mac' | ssh mac pbcopy
+#+end_src
+
+** 从 Mac 发送到 Linux 的剪切板
+
+#+begin_src sh
+xuchunyang@mac $ echo 'Sending text from Mac to Linux' | ssh linux 'copyq add -'
+#+end_src
+
+注意上面需要用到第三方软件 ~copyq~ ，因为 ~xclip~ 无效
+
+#+begin_example
+xuchunyang@mac $ echo 'Sending text from Mac to Linux' | ssh linux xclip
+Error: Can't open display: (null)
+#+end_example
+
+** 同步剪切板
+
+写一个 Python 脚本 ~share_clipboard~ ，Linux 和 Mac 下可以用同样的命令，便可把自己的剪切板发送给对方。
+
+#+BEGIN_SRC python :tangle ~/bin/share_clipboard :shebang #!/usr/bin/env python3
+  import sys
+  import subprocess
+
+
+  if sys.platform == "darwin":
+      subprocess.run("pbpaste | ssh linux 'copyq add -'", shell=True)
+  elif sys.platform == "linux":
+      subprocess.run("xclip -o | ssh mac pbcopy", shell=True)
+#+END_SRC
