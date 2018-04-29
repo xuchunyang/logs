@@ -1,0 +1,261 @@
+#+TITLE: 百分之二十三的 Org Mode Bug Report 零回复
+
+# Created: 2018-04-29
+
+Org Mode 不用 Bug Tracker 来管理 Bug（我不明白为什么），所有的 Bug Report 都寄往了邮件列表，我好奇有没有 Bug Report 未被处理？如果有的话，有多少？具体又是哪些？为了有可能回答这个问题，把「未处理的 Bug Report」跟「未收到任何回复的 Bug Report」等价起来。
+
+** 下载 Org Mode 邮件列表
+
+[[https://lists.gnu.org/mailman/listinfo/emacs-orgmode][Org Mode 邮件列表]] 的原始数据可以从 <ftp://lists.gnu.org/emacs-orgmode/> 以 mbox 格式下载到，用 ~wget --mirror~ 直接「镜像」这个 ftp 文件夹，再次运行同样的命令就能更新，而不必重现下载
+
+#+begin_example
+~ $ wget --mirror ftp://lists.gnu.org/emacs-orgmode/
+#+end_example
+
+文件总共有 700 MiB，本身不算大，但我家连接 GNU 的服务器的速度很慢，花了至少两个小时才下载完。
+
+#+begin_example
+~ $ ls ~/ftp/lists.gnu.org/emacs-orgmode/
+2006-03  2006-11  2007-07  2008-03  2008-11  2009-07  2010-03  2010-11  2011-07  2012-03  2012-11  2013-07  2014-03  2014-11  2015-07  2016-03  2016-11  2017-07  2018-03
+2006-04  2006-12  2007-08  2008-04  2008-12  2009-08  2010-04  2010-12  2011-08  2012-04  2012-12  2013-08  2014-04  2014-12  2015-08  2016-04  2016-12  2017-08  2018-04
+2006-05  2007-01  2007-09  2008-05  2009-01  2009-09  2010-05  2011-01  2011-09  2012-05  2013-01  2013-09  2014-05  2015-01  2015-09  2016-05  2017-01  2017-09
+2006-06  2007-02  2007-10  2008-06  2009-02  2009-10  2010-06  2011-02  2011-10  2012-06  2013-02  2013-10  2014-06  2015-02  2015-10  2016-06  2017-02  2017-10
+2006-07  2007-03  2007-11  2008-07  2009-03  2009-11  2010-07  2011-03  2011-11  2012-07  2013-03  2013-11  2014-07  2015-03  2015-11  2016-07  2017-03  2017-11
+2006-08  2007-04  2007-12  2008-08  2009-04  2009-12  2010-08  2011-04  2011-12  2012-08  2013-04  2013-12  2014-08  2015-04  2015-12  2016-08  2017-04  2017-12
+2006-09  2007-05  2008-01  2008-09  2009-05  2010-01  2010-09  2011-05  2012-01  2012-09  2013-05  2014-01  2014-09  2015-05  2016-01  2016-09  2017-05  2018-01
+2006-10  2007-06  2008-02  2008-10  2009-06  2010-02  2010-10  2011-06  2012-02  2012-10  2013-06  2014-02  2014-10  2015-06  2016-02  2016-10  2017-06  2018-02
+~ $ du -sh ~/ftp/lists.gnu.org/emacs-orgmode/
+721M	/Users/xcy/ftp/lists.gnu.org/emacs-orgmode/
+#+end_example
+
+** 今年四月有多少 Bug Report？
+
+用这个问题来熟悉下 Python 的 mailbox 库。
+
+#+BEGIN_SRC python :results output
+  import mailbox
+  import os
+
+  file = os.path.expanduser("~/ftp/lists.gnu.org/emacs-orgmode/2018-04")
+  mbox = mailbox.mbox(file)
+
+  counter = 0
+  for message in mbox:
+      subject = message["Subject"]
+      if subject.startswith("[O] Bug: "):
+          counter += 1
+          print(subject.split("\n", 1)[0])
+  print("--")
+  print("今年四月 Org 共收到了 {} 个 Bug Report".format(counter))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+[O] Bug: org-capture files wrong date in capture template [9.1.7
+[O] Bug: CUSTOM_ID property not used in LaTeX-Export [9.1.9
+[O] Bug: Modifying org-latex-pdf-process doesn't modify the async
+[O] Bug: 'M-x org-tags-view c-g' not exit gracefully [9.1.9
+[O] Bug: Prevent fill-paragraph from breaking inside Org mode links
+[O] Bug: Editing <column-width> cookie in table column breaks
+[O] Bug: Usage of pmatrix yields error message dispite lack of
+[O] Bug: Weird interaction between ox-extra and include :minlevel
+[O] Bug: org-capture template expansion "%x" stopped working
+[O] Bug: org-collector evaluates headlines starting with hyperlink
+[O] Bug: org-agenda no more aligns tags to the set column
+[O] Bug: A typo in org-eww-copy-for-org-mode's docstring [9.1.11
+[O] Bug: Usability for tags in master branch [9.1.12
+[O] Bug: org-agenda-tags-column does not work anymore [9.1.12
+--
+今年四月 Org 共收到了 14 个 Bug Report
+#+END_EXAMPLE
+
+** 一共有多少 Bug Report?
+
+# NOTE: 不要在 Org 中执行这段代码，可能会卡死 Emacs
+#+BEGIN_SRC python
+  import mailbox
+  import os
+  import re
+
+  path = os.path.expanduser("~/ftp/lists.gnu.org/emacs-orgmode/")
+
+  def get_mbox_files(path):
+      """返回 PATH 下的所有 mbox 文件"""
+      files = []
+      for file in os.listdir(path):
+          # 2018-04
+          if re.fullmatch("\d{4}-\d{2}", file):
+              files.append(path + file)
+      return files
+
+  def get_bugs(file):
+      """从 mobx 文件中获得所有的 Bug Report 消息"""
+      bugs = []
+      mbox = mailbox.mbox(file)
+      for message in mbox:
+          subject = message["Subject"]
+          if subject.startswith("[O] Bug: "):
+              bugs.append(message)
+      return bugs
+
+  bugs = []
+  for file in get_mbox_files(path):
+      print("Processing {}...".format(file))
+      bugs.extend(get_bugs(file))
+  print("总共有 {} 个 Bug Report".format(len(bugs)))
+#+END_SRC
+
+#+begin_example
+总共有 1030 个 Bug Report
+#+end_example
+
+1030 个，比我想象中的要少。
+
+** 今年四月有多少没有回复 Bug Report？
+
+把这个问题解决了，应该就能容易地解决最终的问题了。
+
+#+BEGIN_SRC python :results output
+  import mailbox
+  import os
+
+  file = os.path.expanduser("~/ftp/lists.gnu.org/emacs-orgmode/2018-04")
+
+  def get_bugs(file):
+      """从 mobx 文件中获得所有的 Bug Report 消息"""
+      bugs = []
+      mbox = mailbox.mbox(file)
+      for message in mbox:
+          subject = message["Subject"]
+          if subject.startswith("[O] Bug: "):
+              bugs.append(message)
+      return bugs
+
+  bugs = get_bugs(file)
+  mbox = mailbox.mbox(file)
+  for bug in bugs:
+      message_id = bug["Message-ID"]
+      for msg in mbox:
+          reply_id = msg.get("In-Reply-To", None)
+          if reply_id and reply_id.startswith(message_id):
+              bug["Replied"] = True
+              break
+
+  replied_bugs = []
+  unreplied_bugs = []
+  for bug in bugs:
+      if bug.get("Replied"):
+          replied_bugs.append(bug)
+      else:
+          unreplied_bugs.append(bug)
+
+  print("Total Bugs:", len(bugs))
+  print("Replied Bugs:", len(replied_bugs))
+  print("Unreplied Bugs:", len(unreplied_bugs))
+
+  for bug in unreplied_bugs:
+      print(bug["Subject"].split("\n", 1)[0])
+#+END_SRC
+
+#+RESULTS:
+: Total Bugs: 14
+: Replied Bugs: 11
+: Unreplied Bugs: 3
+: [O] Bug: 'M-x org-tags-view c-g' not exit gracefully [9.1.9
+: [O] Bug: Usage of pmatrix yields error message dispite lack of
+: [O] Bug: org-collector evaluates headlines starting with hyperlink
+
+四月报告的 14 个 Bug 中有 3 个未处理。
+
+** 一共有多少未处理的 Bug Report
+
+#+BEGIN_SRC python :results output
+  import mailbox
+  import os
+  import re
+  from tqdm import tqdm
+
+  path = os.path.expanduser("~/ftp/lists.gnu.org/emacs-orgmode/")
+
+  def get_mbox_files(path):
+      """返回 PATH 下的所有 mbox 文件"""
+      files = []
+      for file in os.listdir(path):
+          # 2018-04
+          if re.fullmatch("\d{4}-\d{2}", file):
+              files.append(path + file)
+      return files
+
+  def get_messages(file):
+      mbox = mailbox.mbox(file)
+      messages = []
+      for key, msg in mbox.items():
+          message = {
+              "file": file,
+              "key": key,
+              "Subject": msg["Subject"],
+              "Message-ID": msg["Message-ID"],
+              "In-Reply-To": msg.get("In-Reply-To", ""),
+          }
+          messages.append(message)
+      mbox.close()
+      return messages
+
+  def get_all_messages(path):
+      messages = []
+      print("get_all_messages...")
+      for file in tqdm(sorted(get_mbox_files(path))):
+          messages.extend(get_messages(file))
+      return messages
+
+  def get_bugs(messages):
+      bugs = []
+      print("get_bugs...")
+      for message in tqdm(messages):
+          subject = message["Subject"]
+          if subject.startswith("[O] Bug: "):
+              bugs.append(message)
+      return bugs
+
+  def get_replied_and_unreplied_bugs(messages, bugs):
+      print("get_replied_and_unreplied_bugs (1)...")
+      for bug in tqdm(bugs):
+          bug["Replied"] = False
+          message_id = bug["Message-ID"]
+          for msg in messages:
+              reply_id = msg["In-Reply-To"]
+              if reply_id.startswith(message_id):
+                  bug["Replied"] = True
+                  break
+
+      print("get_replied_and_unreplied_bugs (2)...")
+      replied_bugs = []
+      unreplied_bugs = []
+      for bug in tqdm(bugs):
+          if bug["Replied"]:
+              replied_bugs.append(bug)
+          else:
+              unreplied_bugs.append(bug)
+      return replied_bugs, unreplied_bugs
+
+  messages = get_all_messages(path)
+  bugs = get_bugs(messages)
+  replied_bugs, unreplied_bugs = get_replied_and_unreplied_bugs(messages, bugs)
+
+  print("Total Messages:", len(messages))
+  print("Total Bugs:", len(bugs))
+  print("Total Replied Bugs:", len(replied_bugs))
+  print("Total Unreplied Bugs:", len(unreplied_bugs))
+
+  for bug in unreplied_bugs:
+      print(bug["Subject"])
+#+END_SRC
+
+#+begin_example
+Total Messages: 120504
+Total Bugs: 1030
+Total Replied Bugs: 793
+Total Unreplied Bugs: 237
+#+end_example
+
+有 23% 的 Bug Report 没有处理，比我意料中的要高。
