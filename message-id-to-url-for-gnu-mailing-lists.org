@@ -1,0 +1,110 @@
+#+TITLE: 根据 Message-ID 获得 lists.gnu.org 上邮件的网址
+
+# Created: 2018-04-30
+
+#+PROPERTY: header-args :exports both :eval never-export
+
+网页用网址标识，邮件用 [[https://en.wikipedia.org/wiki/Message-ID][Message-ID - Wikipedia]] 标识，比如 ~<87lgd671k7.fsf@bzg.fr>~ 对应 [[http://lists.gnu.org//archive/html/emacs-orgmode/2018-04/msg00600.html][{O} {POLL} Should Org tempo be enabled by default? (expand templates thr]]，但 Message-ID 的问题在于没什么软件识别它，如果需要提及一封邮件，还是得用网址。
+
+所以 Message-ID 得到对应的网址，但 http://lists.gnu.org 所用的 [[http://www.namazu.org/][Namazu: a Full-Text Search Engine]] 似乎没提供解决这个需求的直接方法，但它支持搜索 Message-ID，比如：
+
+- 打开 [[http://lists.gnu.org/archive/html/emacs-orgmode/][emacs-orgmode Archives]]
+- 搜索 ~+message-id:<87lgd671k7.fsf@bzg.fr>~
+
+然后就会打开 [[http://lists.gnu.org/archive/cgi-bin/namazu.cgi?query=%252Bmessage-id%253A%253C87lgd671k7.fsf%2540bzg.fr%253E&submit=Search%2521&idxname=emacs-orgmode&max=20&result=normal&sort=score][Mail Archive Search: <+message-id:<87lgd671k7.fsf@bzg.fr>>]]，从中就能获得该邮件对应的网址。
+
+** 写一个 Python 程序，输入 Message-ID，返回网址
+
+用 Python 自动化这一步骤：
+
+- 构造搜索的链接 ~http://lists.gnu.org/archive/cgi-bin/namazu.cgi?query=...~
+- 打开这个链接
+- 解析网页，返回 Message-ID 对于的网址
+
+#+BEGIN_SRC python :results output
+  from requests_html import HTMLSession
+  import re
+
+
+  def message_id_to_url(message_id, mailing_list):
+      """返回 Message-ID 对应的链接"""
+      session = HTMLSession()
+      url = "http://lists.gnu.org/archive/cgi-bin/namazu.cgi"
+      payload = {
+          "query": "+message-id:" + message_id,
+          "idxname": mailing_list,
+      }
+      r = session.get(url, params=payload)
+      for link in r.html.absolute_links:
+          if re.search("\d{4}-\d{2}/msg\d{5}.html", link):
+              return link
+
+  print(message_id_to_url("<87lgd671k7.fsf@bzg.fr>", "emacs-orgmode"))
+#+END_SRC
+
+#+RESULTS:
+: http://lists.gnu.org/archive/html/emacs-orgmode/2018-04/msg00600.html
+
+** 写一个 Emacs 命令，输入 Message-ID，打开网址
+
+写成 Emacs 命令会非常实用，想象我正在 Gnus 中查看一份邮件，一个命令就能打开对应的网址，因为 Message-ID 和 Mailing List 能从当前的邮件中得到（下面的代码没实现这个，因为我这里的 Gnus 体验非常差，多半是国内糟糕的网络环境。等我从 Gnus 迁移到 mu4e/notmuch 这样的离线的邮件方案，再回过头来实现这个功能）
+
+#+begin_src emacs-lisp
+  ;; http://lists.gnu.org/archive/html/
+  ;;
+  ;; - emacs-orgmode
+  ;; - emacs-devel
+  ;; - bug-gnu-emacs
+  ;; - help-gnu-emacs
+  ;;
+  ;; (chunyang-browse-gnu-message "<87lgd671k7.fsf@bzg.fr>" "emacs-orgmode")
+  (defun chunyang-browse-gnu-message (message-id list)
+    (interactive
+     (let ((message-id (read-string "Message-ID: "))
+           (list (completing-read
+                  "Mail list (see http://lists.gnu.org/archive/html/ for all lists): "
+                  '("emacs-orgmode" "emacs-devel"))))
+       (list message-id list)))
+    (let ((url (concat "http://lists.gnu.org/archive/cgi-bin/namazu.cgi?"
+                       (url-build-query-string
+                        `(("query"  ,(concat "+message-id:" message-id))
+                          ("submit" "Search!")
+                          ("idxname" ,list)
+                          ("max"    "20")
+                          ("result" "normal")
+                          ("sort"   "score"))))))
+      (with-current-buffer (url-retrieve-synchronously url)
+        (let* ((html (libxml-parse-html-region url-http-end-of-headers (point-max)))
+               (links (dom-by-tag html 'a))
+               (link (seq-find
+                      (lambda (link)
+                        (let ((target (dom-attr link 'href))
+                              (description (dom-text link)))
+                          (and target
+                               (string-match-p
+                                (rx (repeat 4 digit) "-" (repeat 2 digit) "/msg" (repeat 5 digit) ".html")
+                                ;; "/archive/html/emacs-orgmode/2018-04/msg00398.html"
+                                target))))
+                      links))
+               (target (when link
+                         (dom-attr link 'href)))
+               (absolute-target (when target
+                                  (concat "http://lists.gnu.org/" target))))
+          (if link
+              (let ((target (dom-attr link 'href))
+                    (description (dom-text link)))
+                (setq target (concat "http://lists.gnu.org/" target))
+                (message "Visit %s (%s)..." target description)
+                (browse-url target)
+                target)
+            (message "No match found on %s" url))))))
+#+end_src
+
+简单测试下
+
+#+begin_src emacs-lisp
+(chunyang-browse-gnu-message "<87lgd671k7.fsf@bzg.fr>" "emacs-orgmode")
+#+end_src
+
+#+RESULTS:
+: http://lists.gnu.org//archive/html/emacs-orgmode/2018-04/msg00600.html
