@@ -8,4 +8,4 @@
 - 2018-04-28 | [[file:share-mac-ubuntu-clipboard.org][共享 Mac 和 Linux 剪切板]]
 - 2018-04-30 | [[file:unreplied-bug-reports-to-org-mode.org][百分之二十三的 Org Mode Bug Report 零回复]]
 - 2018-04-30 | [[file:message-id-to-url-for-gnu-mailing-lists.org][根据 Message-ID 获得 lists.gnu.org 上邮件的网址]]
-
+- 2018-05-01 | [[file:search-chinese-by-strokes.org][用笔画数搜索中文]]

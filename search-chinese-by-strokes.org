@@ -1,0 +1,210 @@
+#+TITLE: 用笔画数搜索中文
+
+# Created: 2018-05-01
+# Tags: python
+
+「中」四画，「国」八画，写一个程序可以用 ~4 8~ 搜索到「中国」。
+
+** 一个汉字有几画？
+
+Unicode 下的 [[http://www.unicode.org/reports/tr38/][UAX #38: Unicode Han Database (Unihan)]] 提供了 Unicode 中汉字的各类数据，包括读音、笔画等，其中笔画保存在 ~Unihan_DictionaryLikeData.txt~ 的 [[http://www.unicode.org/reports/tr38/#kTotalStrokes][kTotalStrokes]] ，比如「中」
+
+#+begin_example
+U+4E2D	kTotalStrokes	4
+#+end_example
+
+用 Python 解析这个文件
+
+#+BEGIN_SRC python :results output
+  import os
+  import re
+
+
+  file = "~/Documents/Unihan/Unihan_DictionaryLikeData.txt"
+  file = os.path.expanduser(file)
+
+  chars = {}
+
+  with open(file) as f:
+      for line in f:
+          # U+3400	kTotalStrokes	5
+          if line.startswith("U+") and "kTotalStrokes" in line:
+              tmp = line.split()
+              codepoint = int(tmp[0][2:], base=16)
+              strokes = int(tmp[2])
+              chars[codepoint] = strokes
+
+  print("「中」", chars[ord("中")], "画")
+  print("「国」", chars[ord("国")], "画")
+#+END_SRC
+
+#+RESULTS:
+: 「中」 4 画
+: 「国」 8 画
+
+
+** 一个字符是不是汉字？
+
+汉字以外的字符没有笔画的概念，所以要把汉字跟其它字符区别开来。 ~Unihan_DictionaryLikeData.txt~ 给出的范围是 ~[U+3400, U+2FA15]~
+
+#+BEGIN_SRC python :results output
+  def f(s):
+      if 0x3400 <= ord(s) <= 0x2FA15:
+          print(s, "是汉字")
+      else:
+          print(s, "不是汉字")
+
+  f("中")
+  f("Z")
+#+END_SRC
+
+#+RESULTS:
+: 中 是汉字
+: Z 不是汉字
+
+** 开始搜索吧
+
+#+BEGIN_SRC python :results output
+  import os
+  import re
+
+
+  class Hanzi():
+      """一个表示汉字的类"""
+
+      def __init__(self, db_file=os.path.expanduser(
+              "~/Documents/Unihan/Unihan_DictionaryLikeData.txt")):
+          self.db_file = db_file
+          self.reset()
+
+      def reset(self):
+          self.strokes = {}
+          with open(self.db_file) as f:
+              for line in f:
+                  # U+3400	kTotalStrokes	5
+                  if line.startswith("U+") and "kTotalStrokes" in line:
+                      tmp = line.split()
+                      codepoint = int(tmp[0][2:], base=16)
+                      strokes = int(tmp[2])
+                      self.strokes[codepoint] = strokes
+
+      def get_strokes(self, s):
+          """获得汉字笔画"""
+          codepoint = ord(s)
+          if self.is_hanzi(codepoint):
+              return self.strokes[codepoint]
+          else:
+              return 0
+
+      def get_strokes_list(self, string):
+          return [self.get_strokes(s) for s in string]
+
+      def is_hanzi(self, codepoint):
+          """测试是不是汉字"""
+          return 0x3400 <= codepoint <= 0x2FA15
+
+      def search(self, string, *strokes_list):
+          new_string = ""
+          for s in string:
+              new_string += chr(self.get_strokes(s))
+          pattern = "".join([chr(n) for n in strokes_list])
+          matches = re.finditer(pattern, new_string)
+          for match in matches:
+              start, end = match.span()
+              print(string[start:end])
+
+
+  hanzi = Hanzi()
+  string = "hello 一个表示汉字的类 world"
+  strokes_list = hanzi.get_strokes_list("一个")
+  hanzi.search(string, *strokes_list)
+
+  strokes_list = [1, 3]
+  hanzi.search(string, *strokes_list)
+
+  strokes_list = [5]
+  hanzi.search(string, *strokes_list)
+#+END_SRC
+
+#+RESULTS:
+: 一个
+: 一个
+: 示
+: 汉
+
+** zhgrep
+
+把上面的程序改成一个 Grep 程序，方便在命令行使用：
+
+#+BEGIN_SRC python :tangle ~/bin/zhgrep.py :shebang #!/usr/bin/env python
+  import os
+  import re
+
+
+  class Hanzi():
+      """一个表示汉字的类"""
+
+      def __init__(self, db_file=os.path.expanduser(
+              "~/Documents/Unihan/Unihan_DictionaryLikeData.txt")):
+          self.db_file = db_file
+          self.reset()
+
+      def reset(self):
+          self.strokes = {}
+          with open(self.db_file) as f:
+              for line in f:
+                  # U+3400	kTotalStrokes	5
+                  if line.startswith("U+") and "kTotalStrokes" in line:
+                      tmp = line.split()
+                      codepoint = int(tmp[0][2:], base=16)
+                      strokes = int(tmp[2])
+                      self.strokes[codepoint] = strokes
+
+      def get_strokes(self, s):
+          """获得汉字笔画"""
+          codepoint = ord(s)
+          if self.is_hanzi(codepoint):
+              return self.strokes[codepoint]
+          else:
+              return 0
+
+      def get_strokes_list(self, string):
+          return [self.get_strokes(s) for s in string]
+
+      def is_hanzi(self, codepoint):
+          """测试是不是汉字"""
+          return 0x3400 <= codepoint <= 0x2FA15
+
+      def search(self, string, *strokes_list):
+          new_string = ""
+          for s in string:
+              new_string += chr(self.get_strokes(s))
+          pattern = "".join([chr(n) for n in strokes_list])
+          matches = re.finditer(pattern, new_string)
+          return list(matches)
+
+  if __name__ == "__main__":
+      import sys
+      strokes_list = [int(arg) for arg in sys.argv[1:]]
+      assert strokes_list
+      hanzi = Hanzi()
+      for line in sys.stdin:
+          matches = hanzi.search(line, *strokes_list)
+          if matches:
+              starts = [m.start() for m in matches]
+              ends = [m.end() for m in matches]
+              for i, s in enumerate(line):
+                  if i in starts:
+                      print("\033[31m", end="")
+                  elif i in ends:
+                      print("\033[0m", end="")
+                  print(s, end="")
+            
+#+END_SRC
+
+测试（会看到「一个」为红字）
+
+#+begin_example
+~ $ echo hello 一个表示汉字的类 world | zhgrep.py 1 3
+hello 一个表示汉字的类 world
+#+end_example
