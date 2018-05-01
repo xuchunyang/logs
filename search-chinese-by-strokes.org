@@ -199,7 +199,7 @@ U+4E2D	kTotalStrokes	4
                   elif i in ends:
                       print("\033[0m", end="")
                   print(s, end="")
-            
+
 #+END_SRC
 
 测试（会看到「一个」为红字）
