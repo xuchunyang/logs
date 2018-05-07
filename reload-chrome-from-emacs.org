@@ -1,0 +1,21 @@
+#+TITLE: 从 Emacs 重新加载 Chrome 标签页
+
+# Creatd: <2018-05-08 Tue>
+
+我正在学习 HTML5，分别用 Emacs 和 Chrome 编辑代码和查看结果，桌面是这样
+
+[[./img/chrome-emacs.png]]
+
+手动切换到 Chrome 再刷新不方便，我想到一个自动化这个步骤的方法，利用 [[https://github.com/prasmussen/chrome-cli][chrome-cli]] (macOS-only) 和 [[https://github.com/wasamasa/firestarter][firestarter]] ，只需要在 HTML 文件中用
+
+#+begin_example
+  M-x add-file-local-variable-prop-line firestarter "chrome-cli reload"
+#+end_example
+
+加入
+
+#+begin_src html
+  <!-- -*- firestarter: "chrome-cli reload"; -*- -->
+#+end_src
+
+就大功告成了。每次保存文件时，都会用 ~chrome-cli reload~ 重新加载 Chrome 当前的标签页。
