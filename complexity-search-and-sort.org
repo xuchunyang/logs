@@ -1,0 +1,174 @@
+#+TITLE: 时间复杂度、搜索和排序
+
+# Created: <2018-05-08 Tue>
+
+* 搜索
+
+在一系列值中找出符合条件的值，比如用搜索的方法求平方根。
+
+** 线性搜索 (Linear Search)
+
+线性搜索未排序的列表
+
+#+BEGIN_SRC python
+  def linear_search(L, e):
+      found = False
+      for i in range(L):
+          if e == L[i]:
+              found = True
+      return found
+#+END_SRC
+
+复杂度
+
+\begin{equation}
+O(len(L)) * O(1) =  O(len(L)) = O(n)
+\end{equation}
+
+线性搜索已经排好序的列表
+
+#+BEGIN_SRC python
+  def search(L, e):
+      for i in range(L):
+          if L[i] == e:
+              return True
+          if L[i] > e:
+              return False
+      return False
+#+END_SRC
+
+复杂度
+
+\begin{equation}
+O(len(L)) * O(1) = O(len(L)) =  O(n)
+\end{equation}
+
+** 二分搜索 (Bisection Search)
+
+二分搜索已经排好序的列表
+
+#+BEGIN_SRC python
+  def bisect_search1(L, e):
+      if L == []:
+          return False
+      elif len(L) == 1:
+          return L[0] == e
+      else:
+          half = len(L) // 2
+          if L[half] > e:
+              return bisect_search1(L[:half], e)
+          else:
+              return bisect_search1(L[half:], e)
+#+END_SRC
+
+假设 \( len(L) = 1024 \)， ~bisect_search1~ 会执行约
+
+\begin{equation}
+\log_2 1024 = 10
+\end{equation}
+
+但是执行这 10 次的计算不是固定的，而是跟 $ len(L) $ 有关，所以这个实现的复杂度高于 $ log n $
+
+#+BEGIN_SRC python
+  def bisect_search2(L, e):
+      def bisect_search_helper(L, e, low, high):
+          if high == low:
+              return L[low] == e
+          mid = (low + high) // 2
+          if L[mid] == e:
+              return True
+          elif L[mid] > e:
+              if low == mid:
+                  return False
+              else:
+                  return bisect_search_helper(L, e, low, mid - 1)
+          else:
+              return bisect_search_helper(L, e, mid + 1, high)
+      if L == []:
+          return False
+      else:
+          return bisect_search_helper(L, e, 0, len(L) - 1)
+#+END_SRC
+
+复杂度 $ log n $
+
+* 排序
+
+** 慢排 (Monkey Sort)
+
+#+BEGIN_SRC python
+  import random
+
+  def bogo_sort(L):
+      def is_sorted(L):
+          for i in range(len(L)-1):
+              if L[i] > L[i+1]:
+                  return False
+          return True
+      while not is_sorted(L):
+          random.shuffle(L)
+#+END_SRC
+
+复杂度是 O(?)
+
+** 冒泡排序 (Bubble Sort)
+
+#+BEGIN_SRC python
+  def bubble_sort(L):
+      swap = False
+      while not swap:
+          swap = True
+          for j in range(1, len(L)):
+              if L[j-1] > L[j]:
+                  swap = False
+                  L[j], L[j-1] = L[j-1], L[j]
+#+END_SRC
+
+复杂度是 \( O(len(L)) * O(len(L)) = O(n^2) \)
+
+** 选择排序 (Selection Sort)
+
+#+BEGIN_SRC python
+  def selection_sort(L):
+      suffixSt = 0
+      while suffixSt != len(L):
+          for i in range(suffixSt, len(L)):
+              if L[i] < L[suffixSt]:
+                  L[suffixSt], L[i] = L[i], L[suffixSt]
+          suffixSt += 1
+#+END_SRC
+
+复杂度是 \( O(len(L)) * O(len(L)) = O(n^2) \)
+
+** 合并排序 (Merge Sort)
+
+#+BEGIN_SRC python
+  def merge(left, right):
+      result = []
+      i, j = 0, 0
+      while i < len(left) and j < len(right):
+          if left[i] < right[i]:
+              result.append(left[i])
+              i += 1
+          else:
+              result.append(right[i])
+              j += 1
+      while i < len(left):
+          result.append(left[i])
+          i += 1
+      while j < len(right):
+          result.append(right[j])
+          j += 1
+      return result
+
+  def merge_sort(L):
+      if len(L) < 2:
+          return L[:]
+      else:
+          middle = len(L) // 2
+          left = merge_sort(L[:middle])
+          right = merge_sort(L[middle:])
+          return merge(left, right)
+#+END_SRC
+
+复杂度 \( O(n) * O(log n) = O(n log n) \)
