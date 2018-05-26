@@ -11,3 +11,4 @@
 - 2018-05-01 | [[file:search-chinese-by-strokes.org][用笔画数搜索中文]]
 - 2018-05-08 | [[file:reload-chrome-from-emacs.org][从 Emacs 重新加载 Chrome 标签页]]
 - 2018-05-08 | [[file:complexity-search-and-sort.org][时间复杂度、搜索和排序]]
+- 2018-05-27 | [[file:convert-file-mode-between-numeric-and-symbolic.org][转换文件权限的数字表示和符号表示]]

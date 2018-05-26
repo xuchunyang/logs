@@ -1,0 +1,102 @@
+#+TITLE: 转换文件权限的数字表示和符号表示
+
+# Created: <2018-05-27 Sun>
+
+文件权限既能用可读性很好的数字表示，又能用数字表示。
+
+符号表示：
+
+#+begin_src sh
+ls -l ~/.vimrc
+#+end_src
+
+#+RESULTS:
+: -rw-r--r-- 1 xcy staff 0 May 27 00:24 /Users/xcy/.vimrc
+
+数字表示：
+
+#+begin_src sh
+stat -c "%a" ~/.vimrc
+#+end_src
+
+#+RESULTS:
+: 644
+
+数字和符号间的关系：
+
+| Number | Symbol | Permission |
+|--------+--------+------------|
+|      4 | r      | Read       |
+|      2 | w      | Write      |
+|      1 | x      | Execute    |
+
+把这三种权限组合起来共有 2^3 (8) 种可能
+
+| Symbol | Number |
+|--------+--------|
+| rwx    |      7 |
+| rw-    |      6 |
+| r-x    |      5 |
+| r--    |      4 |
+| -wx    |      3 |
+| -w-    |      2 |
+| --x    |      1 |
+| ---    |      0 |
+
+将符号转换成数字
+
+#+BEGIN_SRC python :results output
+  def sym2num(sym):
+      """把文件权限的符号表示转换成数字表示"""
+      mode = 0
+      r, w, x = sym
+      if r == "r": mode += 4
+      if w == "w": mode += 2
+      if x == "x": mode += 1
+      return mode
+
+  for i in ["rwx", "rw-", "r-x", "r--", "-wx", "-w-", "--x", "---"]:
+      print(i, sym2num(i))
+#+END_SRC
+
+#+RESULTS:
+: rwx 7
+: rw- 6
+: r-x 5
+: r-- 4
+: -wx 3
+: -w- 2
+: --x 1
+: --- 0
+
+将数字转换成符号
+
+#+BEGIN_SRC python :results output
+  def num2sym(num):
+      """把文件权限的数字表示转换成符号表示"""
+      assert 0 <= num <= 7
+      421
+      r,w,x = "---"
+      if num >= 4:
+          num -= 4
+          r = "r"
+      if num >= 2:
+          num -= 2
+          w = "w"
+      if num == 1:
+          x = "x"
+      return r+w+x
+
+  for i in range(7, -1, -1):
+      print(num2sym(i), i)
+#+END_SRC
+
+#+RESULTS:
+: rwx 7
+: rw- 6
+: r-x 5
+: r-- 4
+: -wx 3
+: -w- 2
+: --x 1
+: --- 0
