@@ -1,0 +1,42 @@
+#+TITLE: Org Mode 中 Racket 代码块显示图片
+
+# Created: 2018-06-27
+
+使用 [[https://github.com/DEADB17/ob-racket][DEADB17/ob-racket]]
+
+#+begin_src org
+  ,#+begin_src racket :results file
+    #lang racket
+
+    (require plot)
+
+    (let ([f "racket-plot.png"])
+      (plot (function sin (- pi) pi #:label "y = sin(x)")
+            #:out-file f)
+      (display f))
+  ,#+end_src
+
+  ,#+RESULTS:
+  [[file:racket-plot.png]]
+#+end_src
+
+使用 ob-scheme （Org Mode 自带）
+
+#+begin_src org
+  ,#+NAME: replace
+  ,#+begin_src emacs-lisp :var data=""
+    ;; #<Image: /var/folders/7f/s191h4q97p90374yw15ssrs00000gn/T/geiser-img-15300804291530080429571.png>
+    (if (string-match "\"?#<Image: \\([-+.\\\\/_:0-9a-zA-Z]+\\)>\"?" data)
+        (match-string 1 data)
+      data)
+  ,#+end_src
+
+  ,#+begin_src scheme :post replace(data=*this*) :results file
+    (require plot)
+
+    (plot (function sin (- pi) pi #:label "y = sin(x)"))
+  ,#+end_src
+
+  ,#+RESULTS:
+  [[file:/var/folders/7f/s191h4q97p90374yw15ssrs00000gn/T/geiser-img-15300808741530080874084.png]]
+#+end_src
